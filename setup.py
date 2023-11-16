@@ -11,7 +11,8 @@ setup(
     install_requires=[
         'numpy',
         'scipy',
-        'matplotlib'
+        'matplotlib',
+        'pandas'
     ],
     license='MIT',
     author='Jiyue Qin',

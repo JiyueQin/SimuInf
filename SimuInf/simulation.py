@@ -1,3 +1,9 @@
+import numpy as np
+import pandas as pd
+import sys
+import time
+from SimuInf import scb
+from confidenceset.random_field_generator import gen_2D
 def scb_cover_rate(dim, shape, shape_spec=None,
                    m_sim=1000, alpha = 0.05,
                    m_boots = 5000, method = 'multi_t', multiplier = 'r', std=None):
@@ -69,7 +75,7 @@ def scb_cover_rate(dim, shape, shape_spec=None,
 
     ## compute SCB
     data = np.moveaxis(data, 0,-1)
-    est, lower, upper = confband(data, alpha,  m_boots, method, multiplier)
+    est, lower, upper = scb.confband(data, alpha,  m_boots, method, multiplier)
     ## evaluate coverage
     cover = np.all(lower <= mu) and np.all(mu <= upper)
     """
