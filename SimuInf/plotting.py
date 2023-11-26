@@ -67,7 +67,6 @@ def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(3
     # plt.suptitle(f"method={method}, confset method={temp}, alpha={alpha}")
     plt.show()
 
-
 def ls_plot(image_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(30, 20), title=None, titlesize=20):
     """
     plot a list of 2D images
@@ -92,15 +91,18 @@ def ls_plot(image_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(30, 20),
 
     """
     n = len(image_ls)
+    # print(n)
     k = 0
     if ncol is None:
         ncol = np.ceil(n / nrow).astype(int)
-
+        # print(ncol)
     # a plot with multiple subplots
     fig, axs = plt.subplots(nrow, ncol, figsize=figsize)
     # print(axs.shape)
     if nrow == 1:
-        axs = axs.reshape((1, -1))
+        axs = np.array([axs]).reshape((1, -1))
+    elif ncol == 1:
+        axs = np.array([axs]).reshape((-1, 1))
     ## each subplot
     for i in range(nrow):
         for j in range(ncol):

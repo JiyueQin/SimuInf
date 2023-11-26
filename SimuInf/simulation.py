@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 import sys
 import time
-from SimuInf.scb_old import confband
-from confidenceset.random_field_generator import gen_2D
-
+from SimuInf.scb import confband
+from SimuInf.random_field_generator import gen_2D
 
 def scb_cover_rate(dim, shape, shape_spec=None,
                    m_sim=1000, alpha=0.05, m_boots=5000, boot_data_type='res', boot_type='multiplier',
@@ -72,14 +71,14 @@ def scb_cover_rate(dim, shape, shape_spec=None,
         fig, axs = plt.subplots(1,4,figsize=(10, 6))
         for i, (arr, name) in enumerate(zip([mu, est, lower, upper],
                                     ['mu','est','lower','upper'])):
-    
+
           im=axs[i].imshow(arr)
           axs[i].set_title(name, fontsize = 10)
-    
+
         cbar_ax = fig.add_axes([0.95, 0.2, 0.015, 0.5])
         fig.colorbar(im, cax=cbar_ax)
         plt.show()
-    
+
         print('mu', mu)
         print('est', est)
         print('lower', lower)
@@ -99,6 +98,7 @@ def scb_cover_rate(dim, shape, shape_spec=None,
                         'n': dim[-1], 'w': dim[0], 'h': dim[1],
                         'shape': shape, 'fwhm_noise': shape_spec['fwhm_noise'],
                         'fwhm_signal': shape_spec['fwhm_signal'],
+                        'std': shape_spec['std'],
                         'alpha': alpha, 'm_boots': m_boots,
                         'boot_data_type': boot_data_type,
                         'boot_type': boot_type, 'standardize': standardize, 'multiplier': multiplier},
