@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+from nilearn.image import get_data
 
-
-def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(30, 20)):
+def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(30, 20), background=None, cut=None, label_cut=False):
     """
     plot a list of confidence sets
 
@@ -20,6 +20,12 @@ def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(3
       font size for figure
     figsize : tuple, optional, default: (30,20)
       figure size
+    background: nifti image, optional, default: None
+      the background image
+    cut:int, optional, default: None
+      the z coordinate to slice for a 3d image
+    label_cut: bool, optional, default: False
+      if True, the title will include the z coordinate for the slice
 
     Examples
     --------
@@ -31,8 +37,14 @@ def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(3
     k = 0
     if ncol is None:
         ncol = np.ceil(n / nrow).astype(int)
-
-    cmap1 = colors.ListedColormap(['black', 'blue'])
+    if background is None:
+        cmap1 = colors.ListedColormap(['black', 'blue'])
+    else:
+        cmap1 = colors.ListedColormap(['none', 'blue'])
+        # get the brain image into the right direction
+        confset_ls = [[np.flipud(np.transpose(data[:,:,cut])) for data in list(confset)+[get_data(background)]] for confset in confset_ls]
+        if label_cut:
+            name_ls = [name + f",cut at z={cut}" for name in name_ls]
     cmap2 = colors.ListedColormap(['none', 'yellow'])
     cmap3 = colors.ListedColormap(['none', 'red'])
 
@@ -51,6 +63,9 @@ def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(3
         for j in range(ncol):
             if k == n:
                 break
+            if background is not None:
+                axs[i, j].imshow(confset_ls[k][3], alpha=1, cmap="gray")
+
             ## black/blue for the outer set
             axs[i, j].imshow(confset_ls[k][2], cmap=cmap1)
 
@@ -64,8 +79,9 @@ def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(3
             axs[i, j].set_title(name_ls[k], fontsize=fontsize)
             k = k + 1
 
-    # plt.suptitle(f"method={method}, confset method={temp}, alpha={alpha}")
-    plt.show()
+    #plt.suptitle(f"method={method}, confset method={temp}, alpha={alpha}")
+    #plt.show()
+
 
 def ls_plot(image_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(30, 20), title=None, titlesize=20):
     """

@@ -12,7 +12,8 @@ setup(
         'numpy',
         'scipy',
         'matplotlib',
-        'pandas'
+        'pandas',
+        'nilearn'
     ],
     license='MIT',
     author='Jiyue Qin',
