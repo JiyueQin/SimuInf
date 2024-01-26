@@ -134,7 +134,7 @@ def bootstrap(data, alpha=0.05, m_boots=5000, boot_data_type='res', boot_type='m
 
 def confband(data, alpha=0.05, m_boots=5000,
              boot_data_type='res', boot_type='multiplier',
-             standardize='t', multiplier='r', print_q=False):
+             standardize='t', multiplier='r', print_q=False, return_q=False):
     """
     Compute simultaneous confidence band(SCB) for the mean of a sample from a functional signal plus noise model
 
@@ -160,6 +160,7 @@ def confband(data, alpha=0.05, m_boots=5000,
       the type of multiplier for multiplier bootstrap, only used when boot_type="multiplier"
       Options are "r" for Rademacher multipliers and "g" for Gaussian multipliers.
     print_q: bool
+    return_q: bool
 
     Returns
     -------
@@ -245,6 +246,7 @@ def confband(data, alpha=0.05, m_boots=5000,
                      index = [0])    
         return est, lower, upper, q_df
         """
-    return est, lower, upper
-
-
+    if return_q:
+        return est, lower, upper, q
+    else:
+        return est, lower, upper

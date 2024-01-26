@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from nilearn.image import get_data
 
-def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(30, 20), background=None, cut=None, label_cut=False):
+def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20,
+                 figsize=(30, 20), ticks=True, background=None,
+                 cut=None, label_cut=False, title=None):
     """
     plot a list of confidence sets
 
@@ -42,7 +44,8 @@ def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(3
     else:
         cmap1 = colors.ListedColormap(['none', 'blue'])
         # get the brain image into the right direction
-        confset_ls = [[np.flipud(np.transpose(data[:,:,cut])) for data in list(confset)+[get_data(background)]] for confset in confset_ls]
+        confset_ls = [[np.flipud(np.transpose(data[:, :, cut])) for data in list(confset) + [get_data(background)]] for
+                      confset in confset_ls]
         if label_cut:
             name_ls = [name + f",cut at z={cut}" for name in name_ls]
     cmap2 = colors.ListedColormap(['none', 'yellow'])
@@ -56,34 +59,43 @@ def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(3
         axs = np.array([axs]).reshape((1, -1))
     elif ncol == 1:
         axs = np.array([axs]).reshape((-1, 1))
-    #print(axs.shape)
+    # print(axs.shape)
 
-    ## each subplot
+    # each subplot
     for i in range(nrow):
         for j in range(ncol):
             if k == n:
                 break
+            if not ticks:
+                axs[i, j].get_xaxis().set_visible(False)
+                axs[i, j].get_yaxis().set_visible(False)
+
             if background is not None:
                 axs[i, j].imshow(confset_ls[k][3], alpha=1, cmap="gray")
 
-            ## black/blue for the outer set
-            axs[i, j].imshow(confset_ls[k][2], cmap=cmap1)
+            # black/blue for the outer set
+            if np.sum(confset_ls[k][2] == 0) == 0:
+                axs[i, j].imshow(confset_ls[k][2], cmap=colors.ListedColormap(['blue', 'black']))
+            else:
+                axs[i, j].imshow(confset_ls[k][2], cmap=cmap1)
 
-            ## none/yellow for the estimated set
+            # none/yellow for the estimated set
             axs[i, j].imshow(confset_ls[k][0], cmap=cmap2)
 
-            ## none/red for the inner set
+            # none/red for the inner set
             axs[i, j].imshow(confset_ls[k][1], cmap=cmap3)
 
-            ## title of the subplot
+            # title of the subplot
             axs[i, j].set_title(name_ls[k], fontsize=fontsize)
             k = k + 1
 
-    #plt.suptitle(f"method={method}, confset method={temp}, alpha={alpha}")
-    #plt.show()
+    plt.suptitle(title)
+    # plt.show()
 
 
-def ls_plot(image_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(30, 20), title=None, titlesize=20):
+def ls_plot(image_ls, name_ls=None, nrow=1, ncol=None, fontsize=20, figsize=(30, 20),
+            title=None, titlesize=20,
+            colorbar=None, ticks=True):
     """
     plot a list of 2D images
 
@@ -119,16 +131,27 @@ def ls_plot(image_ls, name_ls, nrow=1, ncol=None, fontsize=20, figsize=(30, 20),
         axs = np.array([axs]).reshape((1, -1))
     elif ncol == 1:
         axs = np.array([axs]).reshape((-1, 1))
-    ## each subplot
+    # each subplot
     for i in range(nrow):
         for j in range(ncol):
             if k == n:
                 break
-            axs[i, j].imshow(image_ls[k])
+            im = axs[i, j].imshow(image_ls[k])
+            if not ticks:
+                axs[i, j].get_xaxis().set_visible(False)
+                axs[i, j].get_yaxis().set_visible(False)
 
-            ## title of the subplot
-            axs[i, j].set_title(name_ls[k], fontsize=fontsize)
+            # title of the subplot
+            if name_ls is not None:
+                axs[i, j].set_title(name_ls[k], fontsize=fontsize)
             k = k + 1
-
+            if colorbar == 'individual':
+                plt.colorbar(im)
+    if colorbar == 'share':
+        # [left, bottom, width, height] of the new axes
+        cbar_ax = fig.add_axes([0.95, 0.2, 0.015, 0.5])
+        fig.colorbar(im, cax=cbar_ax)
     plt.suptitle(title, size=titlesize)
-    plt.show()
+
+    # plt.show()
+
