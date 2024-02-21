@@ -96,15 +96,6 @@ def bootstrap(data, alpha=0.05, m_boots=5000, boot_data_type='res', boot_type='m
         elif standardize == 't':
             boot_mean_squared = (concat_data ** 2 @ counter).reshape(boot_stat_dim) / nsubj
             sigma = np.sqrt(np.abs(boot_mean_squared - boot_means ** 2) * (nsubj / (nsubj - 1)))
-        # compute bootstrap distribution of the absolute value of the maximum
-        # in the signal-plus-noise model, t_n is sqrt(n)
-        if boot_data_type == 'obs':
-            dist = np.sqrt(nsubj) * (np.abs(boot_means -
-                                            sample_mean.repeat(m_boots).reshape(boot_stat_dim)) / sigma).max(
-                tuple(np.arange(d)))
-        elif boot_data_type == 'res':
-            dist = np.sqrt(nsubj) * np.abs(boot_means / sigma).max(
-                tuple(np.arange(d)))
     elif boot_type in ['multiplier']:
         # multiplier: array of shape (n_subj, m_boots), for multiplier bootstrap
         if multiplier == "g":
@@ -120,12 +111,15 @@ def bootstrap(data, alpha=0.05, m_boots=5000, boot_data_type='res', boot_type='m
             boot_mean_squared = (concat_data ** 2 @ multiplier ** 2).reshape(boot_stat_dim) / nsubj
             sigma = np.sqrt(np.abs(boot_mean_squared - boot_means ** 2) * (nsubj / (nsubj - 1)))
         # compute bootstrap distribution of the absolute value of the maximum
-        if boot_data_type == 'obs':
-            dist = np.sqrt(nsubj) * (np.abs(
+        # in the signal-plus-noise model, t_n is sqrt(n)
+    # address the issue when sd is 0?
+    sigma[sigma == 0] = 0.000001
+    if boot_data_type == 'obs':
+        dist = np.sqrt(nsubj) * (np.abs(
                 boot_means - sample_mean.repeat(m_boots).reshape(boot_stat_dim)) / sigma).max(
                 tuple(np.arange(d)))
-        elif boot_data_type == 'res':
-            dist = np.sqrt(nsubj) * np.abs(boot_means / sigma).max(
+    elif boot_data_type == 'res':
+        dist = np.sqrt(nsubj) * np.abs(boot_means / sigma).max(
                 tuple(np.arange(d)))
     q = np.quantile(dist, 1 - alpha)
     # print('sigma:',sigma)
