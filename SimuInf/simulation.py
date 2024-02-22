@@ -4,41 +4,70 @@ import sys
 import time
 from SimuInf.scb import confband
 from SimuInf.random_field_generator import gen_2D
+from confidenceset.random_field_generator import gen_spec
 
-
-# to do: update
-def scb_cover_rate(dim=None, shape=None, shape_spec=None, noise_type='gaussian', data_sim=None, mu=None,
-                   m_sim=1000, alpha=0.05, m_boots=5000, boot_data_type='res', boot_type='multiplier',
-                   standardize='t', multiplier='r', std=None):
+def scb_coverage(data, mu, alpha=0.05, m_boots=5000,
+                boot_data_type='res', boot_type='multiplier',
+                standardize='t', multiplier='r'):
     """
-    Calculate the covering rate of SCB constructed by various methods.
+    Check the coverage of SCB by a specific method with given data and mean.
     Parameters
     ----------
-    data_sim: list, optional, default: None
-      a list of arrays as the generated data for simulation. If None, random 2D fields will be generated based on other parameters supplied.
-      The length of the list should be the same as m_sim.
-    mu: array, optiona;, default: None
-      an array for the mean of the data. If None, this will be the mean of random 2D fields generated based on other parameters supplied.
+    mu: array, optional;, default: None
+      an array for the mean of the data. If None, this will all 0.
     alpha: float, optional, default: 0.05
       1-alpha is the targeted covering rate of the simultaneous confidence interval
     m_boots: int, optional, default: 5e3
       number of bootstrap samples
-    boot_data_type: string, optional, default: "res"
-      the type of the input data.
-      Options are "res" for residuals, "obs" for observations.
-      boot_type: string, optional, default: "multiplier"
-        the type of bootstrap
-        Options are "multiplier" for multiplier bootstrap and "nonparametric" for nonparametric bootstrap.
-      standardize: string, optional, default: "t"
-        the type of standardization
-        Options are "t" for t score(use bootstrap sd) and "z" for z score(only use sample sd).
-      multiplier: string, optional, default: "r"
-        the type of multiplier for multiplier bootstrap, only used when boot_type="multiplier"
-        Options are "r" for Rademacher multipliers and "g" for Gaussian multipliers.
 
     Returns
     -------
-    a pandas dataframe with one row
+    tuple with elements:
+    cover: int
+      1 indicates coverage of true mean and 0 otherwise
+    q: float
+      alpha-quantile value of dist
+    runtime_secs: float
+      runtime
+
+    Details
+    -------
+
+
+    Example
+    -------
+
+
+    """
+    start_time = time.time()
+    est, lower, upper, q = confband(data, alpha, m_boots, boot_data_type, boot_type,
+                                     standardize, multiplier, return_q=True)
+    # evaluate coverage
+    cover = np.all(lower <= mu) and np.all(mu <= upper)
+    # compute the runtime for each run of the method
+    runtime_secs = time.time() - start_time
+    return cover, q, runtime_secs
+
+
+def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type='gaussian',
+                   data_in=None, mu=None, subsample_size=20,
+                   m_sim=1000, alpha=0.05, m_boots=5000, std=None):
+    """
+    Calculate the covering rate of SCB constructed by various methods.
+    Parameters
+    ----------
+    method_df: DataFrame,
+      a dataframe where each row is a particular method
+    mu: array, optional;, default: None
+      an array for the mean of the data. If None, this will all 0.
+    alpha: float, optional, default: 0.05
+      1-alpha is the targeted covering rate of the simultaneous confidence interval
+    m_boots: int, optional, default: 5e3
+      number of bootstrap samples
+
+    Returns
+    -------
+    a pandas dataframe where each row is the coverage of each method
 
     Details
     -------
@@ -52,100 +81,64 @@ def scb_cover_rate(dim=None, shape=None, shape_spec=None, noise_type='gaussian',
     # -----check user inputs
     if not isinstance(m_boots, int):
         sys.exit("The input m_boots needs to be a positive natural number.")
+    subsampling = (data_in is not None)
 
+    if subsampling:
+        dim = data_in.shape
+    # initialize mu to be all 0
+    if mu is None:
+        mu = np.zeros(dim[:-1])
+
+    # reset the index
+    method_df = method_df.reset_index(drop=True)
+    df = pd.DataFrame()
     # -----simulation
-    # create simulated data if not provided: a list of arrays
-    if data_sim is None:
-        print('----creating simulated data----')
-        supply_data = False
-        data_sim = []
-        for i in range(m_sim):
-            ## generate 2D data
-            if shape == 'noise':
-                data = np.random.normal(size=dim) * std
-                mu = np.zeros((dim[0], dim[1]))
-            else:
-                # to do: update gen_2D, to fix the dim issue, also need to fix funcations of ellipse_2d..
-                data, mu = gen_2D(dim=(dim[2], dim[0], dim[1]), shape=shape, shape_spec=shape_spec,
-                                  noise_type=noise_type)
-                data_sim.append(data)
-    else:
-        supply_data = True
-        # if m_data_sim != m_sim:
-        #     sys.exit("The length of the supplied data should be the same as m_sim.")
-        print(f'-----use provided data and mu, the simulation replication number is {len(data_sim)} ---- ')
-        dim = data_sim[0].shape
-    # apply the method on the simulated data
-    cover_ls = []
-    q_ls = []
-    start_time = time.time()
-    for data in data_sim:
-        ## compute SCB
-        if not supply_data:
+
+    for i in range(m_sim):
+        # perform subsampling
+        if subsampling:
+            # get a subsample by sampling without replacement
+            data = data_in[..., np.random.choice(dim[-1], subsample_size, replace=False)]
+        # simulate 2D data
+        elif shape == 'noise':
+            data = np.random.normal(size=dim) * std
+        else:
+            # to do: update gen_2D, to fix the dim issue, also need to fix functions of ellipse_2d.
+            data, mu = gen_2D(dim=(dim[2], dim[0], dim[1]), shape=shape, shape_spec=shape_spec, noise_type=noise_type)
             data = np.moveaxis(data, 0, -1)
-        est, lower, upper, q = confband(data, alpha, m_boots, boot_data_type, boot_type,
-                                        standardize, multiplier, return_q=True)
-        ## evaluate coverage
-        cover = np.all(lower <= mu) and np.all(mu <= upper)
-        """
-        # checking
-        fig, axs = plt.subplots(1,4,figsize=(10, 6))
-        for i, (arr, name) in enumerate(zip([mu, est, lower, upper],
-                                    ['mu','est','lower','upper'])):
+        for k in method_df.index:
+            # apply the method on the simulated data
+            cover, q, time = scb_coverage(data, mu, alpha, m_boots,
+                                          boot_data_type=method_df['boot_data_type'][k],
+                                          boot_type=method_df['boot_type'][k],
+                                          standardize=method_df['standardize'][k],
+                                          multiplier=method_df['multiplier'][k])
+            df_single = pd.DataFrame({'simu_index': i, 'method_index': k,
+                                      'cover': cover,
+                                      'q': q,
+                                      'runtime_secs': time},
+                                     index=[0])
+            df = pd.concat([df, df_single], ignore_index=True)
+    df_summary = df.groupby('method_index').agg({'cover': 'mean', 'q': ['mean', 'std'], 'runtime_secs': 'mean'})
+    df_summary.columns = ['rate', 'mean_q', 'sd_q', 'runtime_secs']
+    df_summary = df_summary.join(method_df)
 
-          im=axs[i].imshow(arr)
-          axs[i].set_title(name, fontsize = 10)
-
-        cbar_ax = fig.add_axes([0.95, 0.2, 0.015, 0.5])
-        fig.colorbar(im, cax=cbar_ax)
-        plt.show()
-
-        print('mu', mu)
-        print('est', est)
-        print('lower', lower)
-        print('upper', upper)
-        print('number of locations with lower<=mu:', np.sum(lower <= mu))
-        print('number of locations with mu<=upper:', np.sum(mu <= upper))
-        print('number of locations with coverage:', np.logical_and(lower <= mu,mu <= upper).sum())
-        """
-        cover_ls.append(cover)
-        q_ls.append(q)
-    # compute the TOTAL runtime for all runs of the method, divide by m_sim gives the runtime for each run
-    runtime_secs = round((time.time() - start_time), 2)
-    # ?width length comfirm
-    if boot_type in ['nonparametric']:
-        multiplier = 'NA'
-    if not supply_data:
-        out = pd.DataFrame({'rate': np.mean(cover_ls),
-                            'mean_q': np.mean(q_ls),
-                            'sd_q': np.std(q_ls, ddof=1),
-                            'runtime_secs': runtime_secs,
-                            'n': dim[-1], 'w': dim[0], 'h': dim[1],
-                            'shape': shape, 'fwhm_noise': shape_spec['fwhm_noise'],
-                            'fwhm_signal': shape_spec['fwhm_signal'],
-                            'std': shape_spec['std'],
-                            'noise_type': noise_type,
-                            'alpha': alpha, 'm_boots': m_boots,
-                            'boot_data_type': boot_data_type,
-                            'boot_type': boot_type, 'standardize': standardize, 'multiplier': multiplier},
-                           index=[0])
+    # ?width length confirm
+    if subsampling:
+        out = df_summary.assign(n=dim[-1], subsample_size=subsample_size, dim=str(dim[:-1]),
+                                alpha=alpha, m_boots=m_boots, m_sim=m_sim)
     else:
-        out = pd.DataFrame({'rate': np.mean(cover_ls),
-                            'mean_q': np.mean(q_ls),
-                            'sd_q': np.std(q_ls, ddof=1),
-                            'runtime_secs': runtime_secs,
-                            'n': dim[-1], 'dim': str(dim[:-1]),
-                            'alpha': alpha, 'm_boots': m_boots,
-                            'boot_data_type': boot_data_type,
-                            'boot_type': boot_type, 'standardize': standardize, 'multiplier': multiplier},
-                           index=[0])
+        out = df_summary.assign(n=dim[-1], w=dim[0], h=dim[1],
+                                shape=shape, fwhm_noise=shape_spec['fwhm_noise'],
+                                fwhm_signal=shape_spec['fwhm_signal'],
+                                std=shape_spec['std'],
+                                noise_type=noise_type, alpha=alpha, m_boots=m_boots, m_sim=m_sim)
     return out
 
 
-# to do : update
-def scb_cover_rate_df(setting_df, method_df,
-                      m_sim=1000, alpha=0.05,
-                      m_boots=5000):
+def scb_cover_rate_multiple(setting_df, method_df,
+                            m_sim=1000, alpha=0.05,
+                            m_boots=5000, data_in=None, mu=None):
     """
     Calculate the covering rate of SCB constructed by various methods in multiple experiments.
 
@@ -178,49 +171,36 @@ def scb_cover_rate_df(setting_df, method_df,
     df = pd.DataFrame()
     # reset the index
     setting_df = setting_df.reset_index(drop=True)
+    method_df = method_df.reset_index(drop=True)
+    subsampling = (data_in is not None)
     for i in setting_df.index:
         print(
             f'----performing simulation, current setting number: {i + 1}, remaining settings: {setting_df.shape[0] - i - 1}----')
-        dim = (setting_df['w'][i], setting_df['h'][i], setting_df['n'][i])
-        # print(dim)
-        shape = setting_df['shape'][i]
-        # print(shape)
-        # gen_spec returns a tuple (specs for 50*50, specs for 100*100)
-        shape_spec_ls = \
-        gen_spec(fwhm_sig=10, fwhm_noise=setting_df['fwhm_noise'][i], std=setting_df['std'][i], mag=4, r=0.5)[0]
+        if not subsampling:
+            dim = (setting_df['w'][i], setting_df['h'][i], setting_df['n'][i])
+            shape = setting_df['shape'][i]
 
-        if shape == 'circular':
-            shape_spec = shape_spec_ls[0]
-        elif shape == 'elipse':
-            shape_spec = shape_spec_ls[1]
-        elif shape == 'ramp':
-            shape_spec = shape_spec_ls[2]
-            # print(shape_spec)
+            # gen_spec returns a tuple (specs for 50*50, specs for 100*100)
+            shape_spec_ls = gen_spec(fwhm_sig=10, fwhm_noise=setting_df['fwhm_noise'][i],
+                                     std=setting_df['std'][i], mag=4, r=0.5)[0]
 
-        #  create simulated data: a list of arrays
-        data_sim = []
-        for j in range(m_sim):
-            ## generate 2D data
-            if shape == 'noise':
-                data = np.random.normal(size=(dim[2], dim[0], dim[1])) * std
-                mu = np.zeros((dim[0], dim[1]))
-            else:
-                # to do: update gen_2D
-                data, mu = gen_2D(dim=(dim[2], dim[0], dim[1]), shape=shape, shape_spec=shape_spec,
-                                  noise_type=setting_df['noise_type'][i])
-                data_sim.append(data)
-        # apply each method to the simulated data
-        for k in method_df.index:
-            # todo: need to update here since scb_cover_rate is changed
-            df_single = scb_cover_rate(dim, shape, shape_spec, noise_type=setting_df['noise_type'][i],
-                                       data_sim=data_sim, mu=mu,
-                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots,
-                                       boot_data_type=method_df['boot_data_type'][k],
-                                       boot_type=method_df['boot_type'][k],
-                                       standardize=method_df['standardize'][k],
-                                       multiplier=method_df['multiplier'][k])
-            df = pd.concat([df, df_single], ignore_index=True)
+            if shape == 'circular':
+                shape_spec = shape_spec_ls[0]
+            elif shape == 'ellipse':
+                shape_spec = shape_spec_ls[1]
+            elif shape == 'ramp':
+                shape_spec = shape_spec_ls[2]
+
+        if subsampling:
+            df_single = scb_cover_rate(method_df, data_in=data_in, mu=mu,
+                                       subsample_size=setting_df['subsample_size'][i],
+                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots)
+        else:
+            df_single = scb_cover_rate(method_df, dim=dim, shape=shape, shape_spec=shape_spec,
+                                       noise_type=setting_df['noise_type'][i],
+                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots)
+
+        df = pd.concat([df, df_single], ignore_index=True)
 
     return df
-
 
