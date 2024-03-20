@@ -9,8 +9,8 @@ from confidenceset.random_field_generator import gen_spec
 
 
 def scb_coverage(data, mu, alpha=0.05, m_boots=5000,
-                boot_data_type='res', boot_type='multiplier',
-                standardize='t', multiplier='r', thresholds_ls = None):
+                 boot_data_type='res', boot_type='multiplier',
+                 standardize='t', multiplier='r', thresholds_ls=None, scb_and_confset=True):
     """
     Check the coverage of SCB by a specific method with given data and mean.
     Parameters
@@ -43,20 +43,26 @@ def scb_coverage(data, mu, alpha=0.05, m_boots=5000,
     """
     start_time = time.time()
     est, lower, upper, q = confband(data, alpha, m_boots, boot_data_type, boot_type,
-                                     standardize, multiplier, return_q=True)
+                                    standardize, multiplier, return_q=True)
     # evaluate coverage
     cover = np.all(lower <= mu) and np.all(mu <= upper)
     # compute the runtime for each run of the method
     runtime_secs = time.time() - start_time
+
     if thresholds_ls is not None:
-        df = pd.DataFrame()
+        if scb_and_confset:
+            df = pd.DataFrame({'thresholds_index': -1, 'n_thresholds': "SCB",
+                               'cover_set': cover},
+                              index=[0])
+        else:
+            df = pd.DataFrame()
         for i in range(len(thresholds_ls)):
             thresholds = thresholds_ls[i]
             n_thresholds = len(thresholds)
             for threshold in thresholds:
-                true_set = mu>threshold
+                true_set = mu > threshold
                 est_set, inner_set, outer_set = confset(est, lower, upper, threshold)
-                cover_set_single = np.all(true_set<=outer_set) and  np.all(true_set>=inner_set)
+                cover_set_single = np.all(true_set <= outer_set) and np.all(true_set >= inner_set)
                 if cover_set_single == 0:
                     break
             cover_set = cover_set_single
@@ -75,7 +81,7 @@ def scb_coverage(data, mu, alpha=0.05, m_boots=5000,
 
 def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type='gaussian',
                    data_in=None, mu=None, subsample_size=20,
-                   m_sim=1000, alpha=0.05, m_boots=5000, std=None, thresholds_ls = None):
+                   m_sim=1000, alpha=0.05, m_boots=5000, std=None, thresholds_ls = None, scb_and_confset=True):
     """
     Calculate the covering rate of SCB constructed by various methods.
     Parameters
@@ -138,7 +144,7 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
                                           boot_data_type=method_df['boot_data_type'][k],
                                           boot_type=method_df['boot_type'][k],
                                           standardize=method_df['standardize'][k],
-                                          multiplier=method_df['multiplier'][k], thresholds_ls = thresholds_ls)
+                                          multiplier=method_df['multiplier'][k], thresholds_ls = thresholds_ls, scb_and_confset=scb_and_confset)
             else:
                 df_single = scb_coverage(data, mu, alpha, m_boots,
                                           boot_data_type=method_df['boot_data_type'][k],
@@ -169,9 +175,10 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
     return out
 
 
+
 def scb_cover_rate_multiple(setting_df, method_df,
                             m_sim=1000, alpha=0.05,
-                            m_boots=5000, data_in=None, mu=None, thresholds_ls = None):
+                            m_boots=5000, data_in=None, mu=None, thresholds_ls = None, scb_and_confset=True):
     """
     Calculate the covering rate of SCB constructed by various methods in multiple experiments.
 
@@ -227,16 +234,12 @@ def scb_cover_rate_multiple(setting_df, method_df,
         if subsampling:
             df_single = scb_cover_rate(method_df, data_in=data_in, mu=mu,
                                        subsample_size=setting_df['subsample_size'][i],
-                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots, thresholds_ls=thresholds_ls)
+                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots, thresholds_ls=thresholds_ls, scb_and_confset=scb_and_confset)
         else:
             df_single = scb_cover_rate(method_df, dim=dim, shape=shape, shape_spec=shape_spec,
                                        noise_type=setting_df['noise_type'][i],
-                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots, thresholds_ls=thresholds_ls)
+                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots, thresholds_ls=thresholds_ls, scb_and_confset=scb_and_confset)
 
         df = pd.concat([df, df_single], ignore_index=True)
 
     return df
-
-
-
-
