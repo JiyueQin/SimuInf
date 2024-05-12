@@ -122,3 +122,79 @@ def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20,
 
     plt.suptitle(title)
     # plt.show()
+
+
+
+def ls_plot(image_ls, name_ls=None, nrow=1, ncol=None, fontsize=20, figsize=(30, 20),
+            title=None, titlesize=20,
+            colorbar=None, ticks=True, colorbar_location = 'right'):
+    """
+    plot a list of 2D images
+
+    Parameters
+    ----------
+    image_ls: list
+        a list of 2D arrays
+    name_ls: list
+        a list of names for each subplot
+    nrow: int, optional, default: 1
+        number of rows of the figure
+    ncol: int, optional, default: the length of signal_ls/nrow
+    fontsize : int, optional, default: 20
+        font size for figure
+    figsize : tuple, optional, default: (30,20)
+        figure size
+
+    Examples
+    --------
+    ls_plot(signal_ls, signal_name_ls)
+
+    """
+    n = len(image_ls)
+    # print(n)
+    k = 0
+    if ncol is None:
+        ncol = np.ceil(n / nrow).astype(int)
+        # print(ncol)
+    # a plot with multiple subplots
+    fig, axs = plt.subplots(nrow, ncol, figsize=figsize)
+    # print(axs.shape)
+    if nrow == 1:
+        axs = np.array([axs]).reshape((1, -1))
+    elif ncol == 1:
+        axs = np.array([axs]).reshape((-1, 1))
+    # each subplot
+    for i in range(nrow):
+        for j in range(ncol):
+            if k == n:
+                break
+            im = axs[i, j].imshow(image_ls[k])
+            if not ticks:
+                axs[i, j].get_xaxis().set_visible(False)
+                axs[i, j].get_yaxis().set_visible(False)
+
+            # title of the subplot
+            if name_ls is not None:
+                axs[i, j].set_title(name_ls[k], fontsize=fontsize)
+            k = k + 1
+            if colorbar == 'individual':
+                plt.colorbar(im)
+    if colorbar == 'share':
+        if colorbar_location == 'right':
+        # [left, bottom, width, height] of the new axes [left, bottom]:coordinate of the southwest corner
+        # All quantities are in fractions of figure width and height.
+        # note, there can be white regions in the figure
+            cbar_ax = fig.add_axes([0.95, 0.2, 0.015, 0.5])
+            fig.colorbar(im, cax=cbar_ax)
+        elif colorbar_location == 'left':
+            cbar_ax = fig.add_axes([0.15, 0.2, 0.015, 0.5])
+            fig.colorbar(im, cax=cbar_ax)
+        else:
+            fig.colorbar(im, location = 'top')
+        if colorbar_location == 'left':
+            cbar_ax.yaxis.set_ticks_position('left')
+
+    plt.suptitle(title, size=titlesize)
+
+    # plt.show()
+
