@@ -4,13 +4,13 @@ This Python packages implements methods that construct simultaneous confidence r
 ## Features 
 - construct simultaneous confidence bands (SCBs) via various bootstrap methods
 - contrcut simultaneous confidence regions (SCRs) by inverting the SCB
-- plots the estimated excursion set and SCRs, with tools specific for applications to fMRI 
-- perfroms simulations or resting state validations
+- plots the estimated excursion set and SCRs, with interactive tools specific for applications to fMRI 
+- perfroms simulations or 3D resting state validations
 
 
 ## Data to reproduce the analyses
 
-- HCP data: The Human Connectome Project data can be provided upon request after users sign the data use agreement required by HCP.
+- HCP data: The Human Connectome Project data can be provided upon request after users sign the data use agreement required by HCP, which can be found at https://www.humanconnectome.org/study/hcp-young-adult/data-use-terms
 
 - Data used for resting-state validation: http://tinyurl.com/clusterfailure, processed by Eklund, A., Nichols, T. E., & Knutsson, H. (2016). Cluster failure: Why fMRI inferences for spatial extent have inflated false-positive rates. Proceedings of the national academy of sciences, 113(28), 7900-7905.
 
