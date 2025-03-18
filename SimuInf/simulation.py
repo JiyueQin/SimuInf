@@ -81,7 +81,8 @@ def scb_coverage(data, mu, alpha=0.05, m_boots=5000,
 
 def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type='gaussian',
                    data_in=None, mu=None, subsample_size=20,
-                   m_sim=1000, alpha=0.05, m_boots=5000, std=None, thresholds_ls = None, scb_and_confset=True):
+                   m_sim=1000, alpha=0.05, m_boots=5000, std=None, thresholds_ls = None, scb_and_confset=True,
+                  return_summary = False):
     """
     Calculate the covering rate of SCB constructed by various methods.
     Parameters
@@ -117,7 +118,7 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
         dim = data_in.shape
     # initialize mu to be all 0
     if mu is None:
-        # note for 1d, this becomes a row vector.  to do: fix the issue of input mu is a column vector
+        # note for 1d, this becomes a row vector.  to do: fix the issue of input mu is a column vector  
         mu = np.zeros(dim[:-1])
 
     # reset the index
@@ -145,7 +146,7 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
                                           boot_type=method_df['boot_type'][k],
                                           standardize=method_df['standardize'][k],
                                           multiplier=method_df['multiplier'][k], thresholds_ls = thresholds_ls, scb_and_confset=scb_and_confset)
-            else:
+            else: 
                 df_single = scb_coverage(data, mu, alpha, m_boots,
                                           boot_data_type=method_df['boot_data_type'][k],
                                           boot_type=method_df['boot_type'][k],
@@ -153,21 +154,23 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
                                           multiplier=method_df['multiplier'][k])
             df_single =df_single.assign(simu_index=i, method_index=k)
             df = pd.concat([df, df_single], ignore_index=True)
-    if provide_thresholds:
-        df_summary = df.groupby(['method_index', 'thresholds_index', 'n_thresholds']).agg({'cover_set': 'mean'})
-        df_summary.columns = ['rate']
-        df_summary = df_summary.reset_index()
-    else:
-        df_summary = df.groupby('method_index').agg({'cover': 'mean', 'q': ['mean', 'std'], 'runtime_secs': 'mean'})
-        df_summary.columns = ['rate', 'mean_q', 'sd_q', 'runtime_secs']
-    df_summary = df_summary.join(method_df, on='method_index')
+    if return_summary:
+        if provide_thresholds:
+            df_summary = df.groupby(['method_index', 'thresholds_index', 'n_thresholds']).agg({'cover_set': 'mean'})
+            df_summary.columns = ['rate']
+            df_summary = df_summary.reset_index()
+        else:
+            df_summary = df.groupby('method_index').agg({'cover': 'mean', 'q': ['mean', 'std'], 'runtime_secs': 'mean'})
+            df_summary.columns = ['rate', 'mean_q', 'sd_q', 'runtime_secs']
+            df = df_summary 
+    df = df.join(method_df, on='method_index')
 
     # ?width length confirm
     if subsampling:
-        out = df_summary.assign(n=dim[-1], subsample_size=subsample_size, dim=str(dim[:-1]),
+        out = df.assign(n=dim[-1], subsample_size=subsample_size, dim=str(dim[:-1]),
                                 alpha=alpha, m_boots=m_boots, m_sim=m_sim)
     else:
-        out = df_summary.assign(n=dim[-1], w=dim[0], h=dim[1],
+        out = df.assign(n=dim[-1], w=dim[0], h=dim[1],
                                 shape=shape, fwhm_noise=shape_spec['fwhm_noise'],
                                 fwhm_signal=shape_spec['fwhm_signal'],
                                 std=shape_spec['std'],
@@ -178,7 +181,7 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
 
 def scb_cover_rate_multiple(setting_df, method_df,
                             m_sim=1000, alpha=0.05,
-                            m_boots=5000, data_in=None, mu=None, thresholds_ls = None, scb_and_confset=True):
+                            m_boots=5000, data_in=None, mu=None, thresholds_ls = None, scb_and_confset=True, return_summary = False):
     """
     Calculate the covering rate of SCB constructed by various methods in multiple experiments.
 
@@ -220,7 +223,8 @@ def scb_cover_rate_multiple(setting_df, method_df,
             dim = (setting_df['w'][i], setting_df['h'][i], setting_df['n'][i])
             shape = setting_df['shape'][i]
 
-            # gen_spec returns a tuple (specs for 50*50, specs for 100*100)
+            # gen_spec returns a tuple (specs for 50*50, specs for 100*100), although the only difference is on FWHM
+            # use the 50*50 so FWHM stays consistent
             shape_spec_ls = gen_spec(fwhm_sig=10, fwhm_noise=setting_df['fwhm_noise'][i],
                                      std=setting_df['std'][i], mag=4, r=0.5)[0]
 
@@ -234,12 +238,17 @@ def scb_cover_rate_multiple(setting_df, method_df,
         if subsampling:
             df_single = scb_cover_rate(method_df, data_in=data_in, mu=mu,
                                        subsample_size=setting_df['subsample_size'][i],
-                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots, thresholds_ls=thresholds_ls, scb_and_confset=scb_and_confset)
+                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots, thresholds_ls=thresholds_ls, 
+                                       scb_and_confset=scb_and_confset,
+                                       return_summary = return_summary)
         else:
             df_single = scb_cover_rate(method_df, dim=dim, shape=shape, shape_spec=shape_spec,
                                        noise_type=setting_df['noise_type'][i],
-                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots, thresholds_ls=thresholds_ls, scb_and_confset=scb_and_confset)
+                                       m_sim=m_sim, alpha=alpha, m_boots=m_boots, thresholds_ls=thresholds_ls, 
+                                       scb_and_confset=scb_and_confset,
+                                      return_summary = return_summary)
 
         df = pd.concat([df, df_single], ignore_index=True)
 
     return df
+
