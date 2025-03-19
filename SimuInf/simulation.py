@@ -82,7 +82,7 @@ def scb_coverage(data, mu, alpha=0.05, m_boots=5000,
 def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type='gaussian',
                    data_in=None, mu=None, subsample_size=20,
                    m_sim=1000, alpha=0.05, m_boots=5000, std=None, thresholds_ls = None, scb_and_confset=True,
-                  return_summary = False):
+                   return_summary = True):
     """
     Calculate the covering rate of SCB constructed by various methods.
     Parameters
@@ -160,8 +160,8 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
             df_summary.columns = ['rate']
             df_summary = df_summary.reset_index()
         else:
-            df_summary = df.groupby('method_index').agg({'cover': 'mean', 'q': ['mean', 'std'], 'runtime_secs': 'mean'})
-            df_summary.columns = ['rate', 'mean_q', 'sd_q', 'runtime_secs']
+            df_summary = df.groupby('method_index').agg({'cover': 'mean', 'q': ['mean', 'std'], 'runtime_secs': ['mean', 'std']})
+            df_summary.columns = ['rate', 'mean_q', 'sd_q', 'runtime_secs', 'sd_runtime_secs']
             df = df_summary 
     df = df.join(method_df, on='method_index')
 
@@ -177,11 +177,9 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
                                 noise_type=noise_type, alpha=alpha, m_boots=m_boots, m_sim=m_sim)
     return out
 
-
-
 def scb_cover_rate_multiple(setting_df, method_df,
                             m_sim=1000, alpha=0.05,
-                            m_boots=5000, data_in=None, mu=None, thresholds_ls = None, scb_and_confset=True, return_summary = False):
+                            m_boots=5000, data_in=None, mu=None, thresholds_ls = None, scb_and_confset=True, return_summary = True):
     """
     Calculate the covering rate of SCB constructed by various methods in multiple experiments.
 
