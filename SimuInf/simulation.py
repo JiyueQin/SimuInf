@@ -244,7 +244,7 @@ def scb_cover_rate_multiple(setting_df, method_df,
                                        noise_type=setting_df['noise_type'][i],
                                        m_sim=m_sim, alpha=alpha, m_boots=m_boots, thresholds_ls=thresholds_ls, 
                                        scb_and_confset=scb_and_confset,
-                                      return_summary = return_summary)
+                                       return_summary = return_summary)
 
         df = pd.concat([df, df_single], ignore_index=True)
 
