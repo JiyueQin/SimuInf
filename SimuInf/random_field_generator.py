@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from confidenceset.random_field_generator import ramp_2D, ellipse_2D
+import sys
 
-
-def gen_2D(dim, shape, shape_spec, truncate=4, noise_type='gaussian', noise_df=3):
+def gen_2D(dim, shape, shape_spec, truncate=4, noise_type='gaussian', noise_df=None):
     """
     generates a 2D random field using white noise smoothed with Gaussian kernel.
 
@@ -52,9 +52,21 @@ def gen_2D(dim, shape, shape_spec, truncate=4, noise_type='gaussian', noise_df=3
         noise_raw = np.random.randn(*dim_larger)
         sd_before_smoothing = 1
     elif noise_type == 't':
+        if noise_df is None:
+            noise_df = 3
         noise_raw = np.random.standard_t(noise_df, dim_larger)
         if noise_df > 2:
             sd_before_smoothing = np.sqrt(noise_df / (noise_df - 2))
+        else: 
+            sys.exit("Noise degree of freedom needs to be >2 for a t distribution!")
+    elif noise_type == 'chisq':
+        if noise_df is None:
+            noise_df = 2
+        # center by subtracting the mean
+        noise_raw = np.random.chisquare(noise_df, dim_larger)-noise_df
+        sd_before_smoothing = np.sqrt(2*noise_df)
+    #noise_raw_sd = noise_raw.std(0, ddof=1)
+    #print('SD before smoothing across all subjects for each pixel,', 'mean:', noise_raw_sd.mean(), 'max:', noise_raw_sd.max(), 'min:', noise_raw_sd.min())
     # smoothing the noise with gaussian kernel
     for i in np.arange(nsubj):
         noise_raw[i, :, :] = gaussian_filter(noise_raw[i, :, :], sigma=sigma_noise, truncate=truncate)
@@ -71,10 +83,8 @@ def gen_2D(dim, shape, shape_spec, truncate=4, noise_type='gaussian', noise_df=3
     sd_after_smoothing = scale * sd_before_smoothing
     noise = noise_raw[:, padding:padding + dim[1], padding:padding + dim[2]]
     noise = noise / sd_after_smoothing * std
-
-    # sd across all subjects for each pixel
-    # print(noise.std(0, ddof=1))
-    # print(noise.std(0, ddof=1).mean())
-    # print(noise.std(0, ddof=1).std())
+    #noise_sd = noise.std(0, ddof=1)
+    #print('SD after smoothing across all subjects for each pixel,', 'mean:', noise_sd.mean(), 'max:', noise_sd.max(), 'min:', noise_sd.min(), 'sd:', noise_sd.std())
     data = np.array(mu + noise, dtype='float')
     return data, mu
+
