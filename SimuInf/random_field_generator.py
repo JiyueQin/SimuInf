@@ -61,7 +61,7 @@ def gen_2D(dim, shape, shape_spec, truncate=4, noise_type='gaussian', noise_df=N
             sys.exit("Noise degree of freedom needs to be >2 for a t distribution!")
     elif noise_type == 'chisq':
         if noise_df is None:
-            noise_df = 2
+            noise_df = 5
         # center by subtracting the mean
         noise_raw = np.random.chisquare(noise_df, dim_larger)-noise_df
         sd_before_smoothing = np.sqrt(2*noise_df)
