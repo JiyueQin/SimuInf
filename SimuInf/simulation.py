@@ -79,7 +79,8 @@ def scb_coverage(data, mu, alpha=0.05, m_boots=5000,
         return df
 
 
-def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type='gaussian',
+def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type='gaussian', 
+                   noise_df = None, 
                    data_in=None, mu=None, subsample_size=20,
                    m_sim=1000, alpha=0.05, m_boots=5000, std=None, thresholds_ls = None, scb_and_confset=True,
                    return_summary = True):
@@ -136,7 +137,8 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
             data = np.random.normal(size=dim) * std
         else:
             # to do: update gen_2D, to fix the dim issue, also need to fix functions of ellipse_2d.
-            data, mu = gen_2D(dim=(dim[2], dim[0], dim[1]), shape=shape, shape_spec=shape_spec, noise_type=noise_type)
+            data, mu = gen_2D(dim=(dim[2], dim[0], dim[1]), shape=shape, shape_spec=shape_spec, noise_type=noise_type,
+                             noise_df = noise_df)
             data = np.moveaxis(data, 0, -1)
         for k in method_df.index:
             # apply the method on the simulated data
@@ -171,11 +173,14 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
                                 alpha=alpha, m_boots=m_boots, m_sim=m_sim)
     else:
         out = df.assign(n=dim[-1], w=dim[0], h=dim[1],
-                                shape=shape, fwhm_noise=shape_spec['fwhm_noise'],
-                                fwhm_signal=shape_spec['fwhm_signal'],
-                                std=shape_spec['std'],
-                                noise_type=noise_type, alpha=alpha, m_boots=m_boots, m_sim=m_sim)
+                        shape=shape, fwhm_noise=shape_spec['fwhm_noise'],
+                        fwhm_signal=shape_spec['fwhm_signal'],
+                        std=shape_spec['std'],
+                        noise_type=noise_type, 
+                        noise_df = noise_df, 
+                        alpha=alpha, m_boots=m_boots, m_sim=m_sim)
     return out
+
 
 def scb_cover_rate_multiple(setting_df, method_df,
                             m_sim=1000, alpha=0.05,
@@ -242,6 +247,7 @@ def scb_cover_rate_multiple(setting_df, method_df,
         else:
             df_single = scb_cover_rate(method_df, dim=dim, shape=shape, shape_spec=shape_spec,
                                        noise_type=setting_df['noise_type'][i],
+                                       noise_df = setting_df['noise_df'][i],
                                        m_sim=m_sim, alpha=alpha, m_boots=m_boots, thresholds_ls=thresholds_ls, 
                                        scb_and_confset=scb_and_confset,
                                        return_summary = return_summary)
