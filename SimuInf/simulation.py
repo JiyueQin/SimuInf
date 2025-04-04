@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 import time
 import shutil
+import os
 from SimuInf.scb import confband
 from SimuInf.confset import confset
 from SimuInf.random_field_generator import gen_2D
