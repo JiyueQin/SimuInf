@@ -12,8 +12,6 @@ def return_cuts(confset_ls, display_mode, cut, background):
     return confset_ls
 
 
-
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
@@ -21,7 +19,8 @@ from nilearn.image import get_data
 
 def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20,
                  figsize=(30, 20), ticks=True, background=None, display_mode='z', 
-                 cuts=None, label_cut=False, title=None):
+                 cuts=None, label_cut=False, title=None, truth_mask_ls = None,
+                 contour_color = 'purple', contour_linewidth = 1.5, alpha = 1):
     """
     plot a list of confidence sets
 
@@ -106,15 +105,20 @@ def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20,
 
             # black/blue for the outer set
             if np.sum(confset_ls[k][2] == 0) == 0:
-                axs[i, j].imshow(confset_ls[k][2], cmap=colors.ListedColormap(['blue', 'black']))
+                axs[i, j].imshow(confset_ls[k][2], cmap=colors.ListedColormap(['blue', 'black']), alpha = alpha)
             else:
-                axs[i, j].imshow(confset_ls[k][2], cmap=cmap1)
+                axs[i, j].imshow(confset_ls[k][2], cmap=cmap1, alpha = alpha)
 
             # none/yellow for the estimated set
-            axs[i, j].imshow(confset_ls[k][0], cmap=cmap2)
+            axs[i, j].imshow(confset_ls[k][0], cmap=cmap2, alpha = alpha)
 
             # none/red for the inner set
-            axs[i, j].imshow(confset_ls[k][1], cmap=cmap3)
+            axs[i, j].imshow(confset_ls[k][1], cmap=cmap3, alpha = alpha)
+
+            if truth_mask_ls is not None:
+                # Draw contour around the mask
+                axs[i, j].contour(truth_mask_ls[k], levels=[0.5], colors=contour_color, 
+                                  linestyles='dashed', linewidths=contour_linewidth)
 
             # title of the subplot
             axs[i, j].set_title(name_ls[k], fontsize=fontsize)
@@ -122,6 +126,7 @@ def confset_plot(confset_ls, name_ls, nrow=1, ncol=None, fontsize=20,
 
     plt.suptitle(title)
     # plt.show()
+
 
 
 

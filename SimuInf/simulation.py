@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import sys
 import time
+import shutil
 from SimuInf.scb import confband
 from SimuInf.confset import confset
 from SimuInf.random_field_generator import gen_2D
@@ -256,3 +257,115 @@ def scb_cover_rate_multiple(setting_df, method_df,
 
     return df
 
+
+
+
+
+def compare_sss(setting_df, alpha=0.05, m_sim = 1000, m_boots=1000, threshold=2):
+    df_summary = pd.DataFrame()
+    
+    # Reset the index
+    setting_df = setting_df.reset_index(drop=True)
+    
+    for i in setting_df.index:
+        print(
+            f'----performing simulation, current setting number: {i + 1}, remaining settings: {setting_df.shape[0] - i - 1}----'
+        )
+        df = pd.DataFrame()
+        dim = (setting_df['w'][i], setting_df['h'][i], setting_df['n'][i])
+        shape = setting_df['shape'][i]
+
+        # gen_spec returns a tuple (specs for 50*50, specs for 100*100), although the only difference is on FWHM
+        # use the 50*50 so FWHM stays consistent, note for 50*50, the actual fwhm_noise is half its input
+        shape_spec_ls = gen_spec(
+            fwhm_sig=10,
+            fwhm_noise=setting_df['fwhm_noise'][i],
+            std=setting_df['std'][i],
+            mag=4,
+            r=0.5
+        )[0]
+
+        if shape == 'circular':
+            shape_spec = shape_spec_ls[0]
+        elif shape == 'ellipse':
+            shape_spec = shape_spec_ls[1]
+        elif shape == 'ramp':
+            shape_spec = shape_spec_ls[2]
+
+        # to do: update gen_2D, to fix the dim issue, also need to fix functions of ellipse_2d.
+        noise_type = setting_df['noise_type'][i]
+        noise_df = setting_df['noise_df'][i]
+
+        for j in range(m_sim):
+            data, mu = gen_2D(
+                dim=(dim[2], dim[0], dim[1]),
+                shape=shape,
+                shape_spec=shape_spec,
+                noise_type=noise_type,
+                noise_df=noise_df
+            )
+
+            confband_me = confband(
+                np.moveaxis(data, 0, -1),
+                m_boots=m_boots,
+                boot_data_type='res',
+                boot_type='multiplier',
+                standardize='t',
+                multiplier='r',
+                print_q=False
+            )
+
+            confset_me = confset(*confband_me, threshold=threshold)
+            # Metrics to consider:
+            # - % of pixels in inner region out of pixels in the true excursion set (mimic power)
+            # - % of pixels in inner region out of pixels not in the true excursion set
+
+            ## with a single threshold, this would lead to readuced spatial precision that is, fewer detected true pixels.
+            ## with more thresholds, method from alex would lead to too many false positives.
+
+            sss_dir = os.path.join(os.getcwd(), f'sss/setting{i}/sim{j}')
+            # Remove and recreate folder (access denied error)
+            # if os.path.exists(sss_dir):
+            #     shutil.rmtree(sss_dir)
+            os.makedirs(sss_dir, exist_ok=True)
+
+            data_dir = os.path.join(sss_dir, 'data')
+            os.makedirs(data_dir, exist_ok=True)
+           
+            out_dir = os.path.join(sss_dir, 'out')
+            os.makedirs(out_dir, exist_ok=True)
+
+            for k in range(dim[2]):
+                filename = f"data{k}.npy"
+                np.save(os.path.join(data_dir, filename), data[k])
+
+            confset_sss = sss(data_dir, out_dir, dim[2], threshold=threshold)
+            truth = (mu >= threshold)
+            power_me = np.sum(truth & confset_me[1]) / np.sum(truth)
+            power_sss = np.sum(truth & confset_sss[1]) / np.sum(truth)
+            df_single = pd.DataFrame(
+                {'method': ['me', 'sss'], 'power': [power_me, power_sss]},
+                index=[0, 1])
+
+            df = pd.concat([df, df_single], ignore_index=True)
+
+        df_summary_single = df.groupby('method').agg({'power': ['mean', 'std']}).reset_index()
+        df_summary_single.columns = ['method', 'mean_power', 'sd_power']
+        df_summary_single = df_summary_single.assign(
+            n=dim[-1],
+            w=dim[0],
+            h=dim[1],
+            shape=shape,
+            fwhm_noise=shape_spec['fwhm_noise'],
+            fwhm_signal=shape_spec['fwhm_signal'],
+            std=shape_spec['std'],
+            noise_type=noise_type,
+            noise_df=noise_df,
+            alpha=alpha,
+            m_sim = m_sim, 
+            m_boots=m_boots
+        )
+
+        df_summary = pd.concat([df_summary, df_summary_single], ignore_index=True)
+
+    return df_summary
