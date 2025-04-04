@@ -258,7 +258,21 @@ def scb_cover_rate_multiple(setting_df, method_df,
     return df
 
 
-
+from crtoolbox.generate import generate_CRs
+from crtoolbox.lib.regression import regression
+def sss(data_dir, out_dir, n, m_boots=1000, threshold = 2, alpha = 0.05):
+    data_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir)
+              if os.path.isfile(os.path.join(data_dir, f))]
+    # n: sample size 
+    X = np.ones((n,1))
+    # Fit the regression model
+    muhat_file, sigma_file, resid_files = regression(data_files, X, out_dir)
+    # returns a tuple of (inner_file, outer_file, est_file, quantile_est)
+    CR_files = generate_CRs(muhat_file, sigma_file, resid_files, out_dir, threshold, 1-alpha, n_boot=m_boots)
+    # match the order of confset (est, inner, outer)
+    CR_files = [CR_files[2], CR_files[0], CR_files[1]]
+    confset = tuple(np.load(fname) for fname in CR_files)
+    return confset
 
 
 def compare_sss(setting_df, alpha=0.05, m_sim = 1000, m_boots=1000, threshold=2):
