@@ -50,7 +50,8 @@ def confset(est, lower, upper, threshold=0):
 from crtoolbox.generate import generate_CRs
 from crtoolbox.lib.regression import regression
 from nilearn.image import get_data
-
+import os 
+import numpy as np 
 def sss(out_dir, data_dir=None, n=None, m_boots=1000, threshold = 2, alpha = 0.05, mask = None, three_d = False, load_only = False):
     # load_only: True if confidence set results are already computed in the output folder and you want to directly load them
     if not load_only:
