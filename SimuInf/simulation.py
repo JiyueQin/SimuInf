@@ -260,7 +260,7 @@ def scb_cover_rate_multiple(setting_df, method_df,
 
 
 from SimuInf.scb import confband
-from SimuInf.confset import confset
+from SimuInf.confset import confset, sss
 import shutil
 import os
 import numpy as np
