@@ -266,6 +266,13 @@ import os
 import numpy as np
 import pandas as pd
 
+from SimuInf.scb import confband
+from SimuInf.confset import confset, sss
+import shutil
+import os
+import numpy as np
+import pandas as pd
+
 
 def compare_sss(setting_df, alpha=0.05, m_sim = 1000, m_boots=1000, threshold=2, remove_folders = False):
     df_summary = pd.DataFrame()
@@ -344,8 +351,7 @@ def compare_sss(setting_df, alpha=0.05, m_sim = 1000, m_boots=1000, threshold=2,
             for k in range(dim[2]):
                 filename = f"data{k}.npy"
                 np.save(os.path.join(data_dir, filename), data[k])
-
-            confset_sss = sss(data_dir, out_dir, dim[2], threshold=threshold)
+            confset_sss = sss(out_dir, data_dir, dim[2], m_boots = m_boots, threshold=threshold)
             if remove_folders:
                 shutil.rmtree(sss_dir)
             truth = (mu >= threshold)
@@ -377,3 +383,5 @@ def compare_sss(setting_df, alpha=0.05, m_sim = 1000, m_boots=1000, threshold=2,
         df_summary = pd.concat([df_summary, df_summary_single], ignore_index=True)
 
     return df_summary
+
+
