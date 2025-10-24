@@ -5,10 +5,8 @@ import time
 import shutil
 import os
 from SimuInf.scb import confband
-from SimuInf.confset import confset
-from SimuInf.random_field_generator import gen_2D
-from confidenceset.random_field_generator import gen_spec
-
+from SimuInf.confset import confset, sss
+from SimuInf.random_field_generator import gen_spec, gen_2D
 
 def scb_coverage(data, mu, alpha=0.05, m_boots=5000,
                  boot_data_type='res', boot_type='multiplier',
@@ -169,7 +167,6 @@ def scb_cover_rate(method_df, dim=None, shape=None, shape_spec=None, noise_type=
             df = df_summary 
     df = df.join(method_df, on='method_index')
 
-    # ?width length confirm
     if subsampling:
         out = df.assign(n=dim[-1], subsample_size=subsample_size, dim=str(dim[:-1]),
                                 alpha=alpha, m_boots=m_boots, m_sim=m_sim)
@@ -259,19 +256,6 @@ def scb_cover_rate_multiple(setting_df, method_df,
     return df
 
 
-from SimuInf.scb import confband
-from SimuInf.confset import confset, sss
-import shutil
-import os
-import numpy as np
-import pandas as pd
-
-from SimuInf.scb import confband
-from SimuInf.confset import confset, sss
-import shutil
-import os
-import numpy as np
-import pandas as pd
 
 
 def compare_sss(setting_df, alpha=0.05, m_sim = 1000, m_boots=1000, threshold=2, remove_folders = False):
@@ -305,7 +289,6 @@ def compare_sss(setting_df, alpha=0.05, m_sim = 1000, m_boots=1000, threshold=2,
         elif shape == 'ramp':
             shape_spec = shape_spec_ls[2]
 
-        # to do: update gen_2D, to fix the dim issue, also need to fix functions of ellipse_2d.
         noise_type = setting_df['noise_type'][i]
         noise_df = setting_df['noise_df'][i]
 
