@@ -133,9 +133,9 @@ def gen_2D(dim, shape, shape_spec, truncate=4, noise_type='gaussian', noise_df=N
     truncate : int, optional, default: 4
       truncate the filter at this many standard deviations.
     noise_type: string, optional, default: gaussian.
-      the distribution of the noise. Options are "gaussian" (for standard gaussian) and "t" (for t distribution).
-    noise_df: int, optional, default: 3
-      the degree of freedom of the noise distribution if it has a t distribution. This parameter is only used if noise_type='t'.
+      the distribution of the noise. Options are "gaussian" (for standard gaussian), "t" (for t distribution) and "chisq" (for chi-square distribution).
+    noise_df: int, optional, default: 3 for t and 5 for chisq
+      the degree of freedom of the noise distribution if it has a t or a chisq distribution.
 
     Returns
     -------
@@ -194,7 +194,7 @@ def gen_2D(dim, shape, shape_spec, truncate=4, noise_type='gaussian', noise_df=N
     # calculate the sd of the 2d field after smoothing for pixels in the center
     sig = np.zeros((dim[1], dim[2]))
     sig[int(dim[1] / 2), int(dim[2] / 2)] = 1
-    # retrieved the Gaussian kernel used for smoothing
+    # retrieve the Gaussian kernel used for smoothing
     kernel = gaussian_filter(sig, sigma=sigma_noise, truncate=truncate)
     scale = np.sqrt(np.sum(kernel ** 2))  # scale the smoothed noise field by sqrt(sum(kernel^2))
     sd_after_smoothing = scale * sd_before_smoothing
