@@ -1,7 +1,0 @@
-nilearn
-numpy
-git+https://github.com/JiyueQin/SimuInf.git
-joblib
-shiny
-watchfiles
-questionary 

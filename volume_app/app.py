@@ -1,3 +1,5 @@
+# To run the app, run this command in terminal
+# shiny run --launch-browser volume_app/app.py
 from shiny import App, render, ui, reactive
 #import matplotlib.pyplot as plt
 #import numpy as np
@@ -32,7 +34,7 @@ app_ui = ui.page_fluid(
         title='Find Activated Brain Regions')
 
 
-# need to put these inside app folder if you want to host it
+# update with your own results here
 est = joblib.load(Path(__file__).parent / "hcp/est")
 masker = joblib.load(Path(__file__).parent /"hcp/masker")
 lower = joblib.load(Path(__file__).parent /"hcp/lower")
