@@ -59,7 +59,7 @@ ls_plot([mu], name_ls = ['ellipse signal'], nrow=1, figsize=(6,4), fontsize = 10
 plt.show()
 ```
 
-<img src="./readme_ellipse_signal.jpg" width="300px">
+<img src="./docs/readme_ellipse_signal.jpg" width="300px">
 
 - construct simultaneous confidence regions 
 
@@ -87,7 +87,7 @@ confset_plot(confset_ls,
 plt.show()
 ```
 
-<img src="./readme_ellipse_SCR.jpg" width="450px">
+<img src="./docs/readme_ellipse_SCR.jpg" width="450px">
 
 - interactive tool
 
