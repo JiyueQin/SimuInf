@@ -3,15 +3,14 @@
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgray.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 
-
-# SimuInf
-This Python package implements methods that construct **simultaneous confidence regions** (SCRs) for an image excursion set by inverting **simultaneous confidence bands** (SCBs). A key advantage of SCRs is that they provide valid inference simultaneously across all activation thresholds. This enables researchers to fully explore the data and choose the thresholds which provide the most interesting results, without concerns about multiple comparison issues over thresholds.  Another strength of our method is that it does not require stationarity, a particular correlation structure or distribution on the noise field. This reduces bias from model misspecification compared to other methods such as classical implementations based on random field theory.
+## Overview
+**SimuInf** is a Python package for constructing **simultaneous confidence regions** (SCRs) for an image excursion set by inverting **simultaneous confidence bands** (SCBs). A key advantage of SCRs is that they provide valid inference simultaneously across all activation thresholds. This enables researchers to explore the data more flexibly and choose the thresholds which provide the most interesting results, without concerns about multiple comparison issues over thresholds. Another strength of our method is that it does not assume stationarity, a particular correlation structure or distribution on the noise field and has demonstrated robustness across various settings considered in our simulations.
 
 
 ## Features 
-- construct SCBs via various bootstrap methods
-- construct SCRs by inverting the SCBs.
-- plot the estimated excursion set and SCRs, with interactive tools specific for applications to fMRI 
+- Construct SCBs via various bootstrap methods
+- Construct SCRs by inverting the SCBs.
+- Visualize the estimated excursion set and SCRs, with interactive tools designed for fMRI applications
 
 
 ## Usage
@@ -95,20 +94,19 @@ Check out the interactive visualization tool of SCRs obtained from real fMRI dat
 👉 https://jiyueqin.shinyapps.io/fmri_volume/
  
 
-## Example Notebooks
-The repository includes several Jupyter notebooks demonstrating how to use the `SimuInf` package for simulation, analysis, and visualization tasks.
-
-| Notebook | Description |
-|-----------|--------------|
-|demo_2d_simulations.ipynb| 2D simulations to evaluate various bootstrap methods in SCB construction|
-|demo_hcp.ipynb| Analysis of fMRI data from HCP|
-
-
 ## Data Availability
 
 - HCP data: The Human Connectome Project data can be provided upon request after users sign the data use agreement required by HCP, which can be found at https://www.humanconnectome.org/study/hcp-young-adult/data-use-terms
 
 - Data used for resting-state validation: The data are available at http://tinyurl.com/clusterfailure. They were processed by Eklund, A. et al. See reference: *Eklund, A., Nichols, T. E., & Knutsson, H. (2016). Cluster failure: Why fMRI inferences for spatial extent have inflated false-positive rates. Proceedings of the national academy of sciences, 113(28), 7900-7905.*
+
+## Example Notebooks
+The repository includes two Jupyter notebooks demonstrating how to use the `SimuInf` package for simulation, analysis, and visualization tasks.
+
+| Notebook | Description |
+|-----------|--------------|
+|demo_2d_simulations.ipynb| 2D simulations to evaluate various bootstrap methods in SCB construction|
+|demo_hcp.ipynb| Example analysis of fMRI data from HCP|
 
 ## Citation
 To appear.
