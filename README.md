@@ -96,7 +96,7 @@ Check out the interactive visualization tool of SCRs obtained from real fMRI dat
  
 
 ## Example Notebooks
-The repository includes several Jupyter notebooks demonstrating how to use the `SimuInf` package for simulation, analysis, validation, and visualization tasks.
+The repository includes several Jupyter notebooks demonstrating how to use the `SimuInf` package for simulation, analysis, and visualization tasks.
 
 | Notebook | Description |
 |-----------|--------------|
