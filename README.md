@@ -108,11 +108,14 @@ The repository includes two Jupyter notebooks demonstrating how to use the `Simu
 |demo_2d_simulations.ipynb| 2D simulations to evaluate various bootstrap methods in SCB construction|
 |demo_hcp.ipynb| Example analysis of fMRI data from HCP|
 
-## Citation
-To appear.
+## Releated Publication and Citation
+This package implements the methods deveoped in:
+Jiyue Qin, Samuel Davenport, Armin Schwartzman; Simultaneous confidence regions for image excursion sets: A validation study with applications in fMRI. Imaging Neuroscience 2025; 3 IMAG.a.1044. doi: https://doi.org/10.1162/IMAG.a.1044
+
+If you use this package, please cite the paper above. 
 
 ## Contact
 
 Maintained by **Jiyue Qin**,
-PhD student, UC San Diego  
+PhD Candidate in Biostatistics, University of California San Diego  
 📧 j5qin@ucsd.edu
